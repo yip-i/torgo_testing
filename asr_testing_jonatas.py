@@ -65,12 +65,13 @@ def prep_csv(file_path, filter_length = 0):
 def main():
         
   
-    speaker = 'F04'
+    speaker = 'M03'
 
   
     # model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
     # model = SpeechRecognitionModel("jeapaul/wav2vec2-large-xlsr-53-torgo-demo-M03-nolm")
-    model = SpeechRecognitionModel("yip-i/wav2vec2-demo-F04-2")
+    model = SpeechRecognitionModel("yip-i/torgo_xlsr_finetune-" + speaker + "-2")
+    
 
     data = load_dataset('csv', data_files='output.csv')
     data = data.cast_column("audio", Audio(sampling_rate=16_000))
@@ -114,7 +115,7 @@ def main():
 
 
 if __name__=="__main__":
-    prep_csv("output_og.csv", 25)
+    # prep_csv("output_og.csv", 25)
 
     main()
 
