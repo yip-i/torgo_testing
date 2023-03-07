@@ -65,7 +65,7 @@ def prep_csv(file_path, filter_length = 0):
 def main():
         
   
-    speaker = 'M03'
+    speaker = 'F01'
 
   
     # model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")

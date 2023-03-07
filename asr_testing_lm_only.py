@@ -23,7 +23,7 @@ We can see that the `logits` correspond to a sequence of 624 vectors each having
 """
 
 
-from datasets import load_dataset, load_metric, DatasetDict, Dataset, Audio
+from datasets import load_dataset, DatasetDict, Dataset, Audio
 from huggingface_hub import Repository
 from transformers import Wav2Vec2ProcessorWithLM, Wav2Vec2Processor, Wav2Vec2ForCTC
 import torch
@@ -31,10 +31,11 @@ import torch
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 from tqdm import tqdm
+from evaluate import load
 
 
 target_lang="en"  # change to your target lang
-speaker = "M03"
+speaker = "F01"
 model_name = "yip-i/torgo_xlsr_finetune-" + speaker + "-2"
 
 """Cloning and uploading of modeling files can be done conveniently with the `huggingface_hub`'s `Repository` class. 
@@ -154,9 +155,9 @@ for i in tqdm(range(timit.num_rows)):
 
   actual.append(timit[i]["labels"])
 
-wer_metric = load_metric("wer")
+wer_metric = load("wer")
 wer = wer_metric.compute(predictions = pred_str, references = actual)
-print("WER AND CER LOCATION")
+print("WER LOCATION")
 print(wer)
 
 # print("Test WER: {:.3f}".format(wer_metric.compute(pred_str, actual))
