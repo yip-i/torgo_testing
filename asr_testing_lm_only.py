@@ -22,7 +22,7 @@ Original file is located at
 We can see that the `logits` correspond to a sequence of 624 vectors each having 32 entries. Each of the 32 entries thereby stands for the logit probability of one of the 32 possible output characters of the model:
 """
 
-
+import re
 from datasets import load_dataset, DatasetDict, Dataset, Audio
 from huggingface_hub import Repository
 from transformers import Wav2Vec2ProcessorWithLM, Wav2Vec2Processor, Wav2Vec2ForCTC
@@ -32,6 +32,48 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Union
 from tqdm import tqdm
 from evaluate import load
+
+
+def remove_special_characters(batch):
+    batch["text"] = re.sub(chars_to_ignore_regex, '', batch["text"]).lower() + " "
+    return batch
+
+def prepare_dataset(batch):
+    audio = batch["audio"]
+
+    # batched output is "un-batched" to ensure mapping is correct
+    batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"]).input_values[0]
+    batch["input_length"] = len(batch["input_values"])
+    
+    with processor.as_target_processor():
+        # batch["labels"] = processor(batch["text"]).input_ids
+        batch["labels"] = batch["text"]
+        # print(processor(batch["text"]))
+    return batch
+
+def map_to_result(batch):
+    with torch.no_grad():
+      input_values = torch.tensor(batch["input_values"], device="cpu").unsqueeze(0)
+      logits = model(input_values).logits
+
+    pred_ids = torch.argmax(logits, dim=-1)
+    batch["pred_str"] = processor.batch_decode(pred_ids)[0]
+    batch["text"] = batch["labels"]
+    
+    return batch
+
+def get_result(torgo_dataset):
+    pred_str = []
+    actual = []
+    for i in range(torgo_dataset.num_rows):
+      inputs = processor(torgo_dataset[i]["input_values"], sampling_rate=16_000, return_tensors="pt")
+      with torch.no_grad():
+        logits = model(**inputs).logits
+      transcription = processor.batch_decode(logits.numpy()).text
+      pred_str.append(transcription[0].lower())
+      actual = processor.decode(torgo_dataset[i]["labels"]).text
+
+    return pred_str, actual
 
 
 target_lang="en"  # change to your target lang
@@ -69,27 +111,12 @@ timit = data['train'].filter(lambda x: x == speaker, input_columns=['speaker_id'
 processor = Wav2Vec2ProcessorWithLM.from_pretrained("model_staging")
 model = Wav2Vec2ForCTC.from_pretrained(model_name)
 
-import re
 chars_to_ignore_regex = '[\,\?\.\!\-\;\:\"]'
 
-def remove_special_characters(batch):
-    batch["text"] = re.sub(chars_to_ignore_regex, '', batch["text"]).lower() + " "
-    return batch
+
 
 timit = timit.map(remove_special_characters)
 
-def prepare_dataset(batch):
-    audio = batch["audio"]
-
-    # batched output is "un-batched" to ensure mapping is correct
-    batch["input_values"] = processor(audio["array"], sampling_rate=audio["sampling_rate"]).input_values[0]
-    batch["input_length"] = len(batch["input_values"])
-    
-    with processor.as_target_processor():
-        # batch["labels"] = processor(batch["text"]).input_ids
-        batch["labels"] = batch["text"]
-        # print(processor(batch["text"]))
-    return batch
 
 timit = timit.map(prepare_dataset, remove_columns=timit.column_names, num_proc=4)
 timit = timit.filter(lambda x: x < 25 * processor.feature_extractor.sampling_rate, input_columns=["input_length"])
@@ -97,18 +124,7 @@ timit = timit.filter(lambda x: x < 25 * processor.feature_extractor.sampling_rat
 timit[0]
 
 
-def get_result(torgo_dataset):
-  pred_str = []
-  actual = []
-  for i in range(torgo_dataset.num_rows):
-    inputs = processor(torgo_dataset[i]["input_values"], sampling_rate=16_000, return_tensors="pt")
-    with torch.no_grad():
-      logits = model(**inputs).logits
-    transcription = processor.batch_decode(logits.numpy()).text
-    pred_str.append(transcription[0].lower())
-    actual = processor.decode(torgo_dataset[i]["labels"]).text
 
-  return pred_str, actual
 
 # inputs = processor(timit[0]["input_values"], sampling_rate=16_000, return_tensors="pt")
 
@@ -121,16 +137,6 @@ def get_result(torgo_dataset):
 # pred_str = processor.batch_decode(pred_ids)[0]
 
 
-def map_to_result(batch):
-  with torch.no_grad():
-    input_values = torch.tensor(batch["input_values"], device="cpu").unsqueeze(0)
-    logits = model(input_values).logits
-
-  pred_ids = torch.argmax(logits, dim=-1)
-  batch["pred_str"] = processor.batch_decode(pred_ids)[0]
-  batch["text"] = batch["labels"]
-  
-  return batch
 
 # with torch.no_grad():
 #   logits = model(**inputs).logits
