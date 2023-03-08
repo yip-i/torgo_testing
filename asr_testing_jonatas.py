@@ -38,15 +38,22 @@ def remove_special_characters(batch):
     return batch
 
 def prep_asr_testing(torgo_dataset):
-	references = []
-	print(torgo_dataset.num_rows)
-	for i in range(torgo_dataset.num_rows):
-		row = {"path": torgo_dataset[i]["audio"]["path"],
-			"transcription": torgo_dataset[i]["text"].lower()}
-		references.append(row)
-	return references
+    """
+    
+    """
+    references = []
+    for i in range(torgo_dataset.num_rows):
+        row = {"path": torgo_dataset[i]["audio"]["path"],
+        "transcription": torgo_dataset[i]["text"].lower()}
+        references.append(row)
+    return references
 
-def prep_csv(file_path, filter_length = 0):
+
+def prep_csv(file_path, min_length = 0, max_length = 0):
+    """
+    Preps the CSV with all of the data to ensure a max length and min length.
+    Also writes csv to correct file name
+    """
     df = pd.read_csv(file_path)
 
     duration = []
@@ -57,15 +64,24 @@ def prep_csv(file_path, filter_length = 0):
 
     df["duration"] = duration
 
-    if filter_length > 0:
-         df = df[df["duration"] < filter_length]
+    if max_length > 0 and min_length > 0:
+         df = df[df["duration"].between(min_length, max_length)]
          df.to_csv("output.csv")
+    elif max_length > 0:
+         df = df[df["duration"] < max_length]
+         df.to_csv("output.csv")
+    elif min_length > 0:
+        df = df[df["duration"] > min_length]
+        df.to_csv("output.csv")
+        
+
+    
       
 
 def main():
         
   
-    speaker = 'F01'
+    speaker = 'M05'
 
   
     # model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
@@ -115,7 +131,7 @@ def main():
 
 
 if __name__=="__main__":
-    # prep_csv("output_og.csv", 25)
+    prep_csv("output_og.csv", min_length=1)
 
     main()
 
