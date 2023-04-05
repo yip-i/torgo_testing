@@ -77,7 +77,7 @@ def get_result(torgo_dataset):
 
 
 target_lang="en"  # change to your target lang
-speaker = "F01"
+speaker = "M04"
 model_name = "yip-i/torgo_xlsr_finetune-" + speaker + "-2"
 
 """Cloning and uploading of modeling files can be done conveniently with the `huggingface_hub`'s `Repository` class. 

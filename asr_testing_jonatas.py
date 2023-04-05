@@ -84,9 +84,9 @@ def main():
     speaker = 'M05'
 
   
-    # model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
+    model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
     # model = SpeechRecognitionModel("jeapaul/wav2vec2-large-xlsr-53-torgo-demo-M03-nolm")
-    model = SpeechRecognitionModel("yip-i/torgo_xlsr_finetune-" + speaker + "-2")
+    # model = SpeechRecognitionModel("yip-i/torgo_xlsr_finetune-" + speaker + "-2")
     
 
     data = load_dataset('csv', data_files='output.csv')
@@ -134,4 +134,3 @@ if __name__=="__main__":
     prep_csv("output_og.csv", min_length=1)
 
     main()
-
