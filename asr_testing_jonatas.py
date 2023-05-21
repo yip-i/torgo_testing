@@ -49,6 +49,8 @@ def prep_asr_testing(torgo_dataset):
     return references
 
 
+
+
 def prep_csv(file_path, min_length = 0, max_length = 0):
     """
     Preps the CSV with all of the data to ensure a max length and min length.
@@ -81,26 +83,30 @@ def prep_csv(file_path, min_length = 0, max_length = 0):
 def main():
         
   
-    speaker = 'M05'
+    speaker = 'F01'
 
   
-    model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
+    # model = SpeechRecognitionModel("jonatasgrosman/wav2vec2-large-xlsr-53-english")
     # model = SpeechRecognitionModel("jeapaul/wav2vec2-large-xlsr-53-torgo-demo-M03-nolm")
-    # model = SpeechRecognitionModel("yip-i/torgo_xlsr_finetune-" + speaker + "-2")
+    model = SpeechRecognitionModel("yip-i/torgo_xlsr_finetune-" + speaker + "-2")
     
 
     data = load_dataset('csv', data_files='output.csv')
     data = data.cast_column("audio", Audio(sampling_rate=16_000))
+
     timit = data['train'].filter(lambda x: x == speaker, input_columns=['speaker_id'])
+    train_data_transcribed = data['train'].filter(lambda x: x != speaker, input_columns=['speaker_id'])
+    
+
 
     timit[0]
     timit = timit.map(remove_special_characters)
     
 
-    audio_paths = ["content/downloads/Torgo/F01/Session1/wav_arrayMic/0008.wav", "content/downloads/Torgo/F01/Session1/wav_arrayMic/0009.wav"]
+    # audio_paths = ["content/downloads/Torgo/F01/Session1/wav_arrayMic/0008.wav", "content/downloads/Torgo/F01/Session1/wav_arrayMic/0009.wav"]
 
-    transcriptions = model.transcribe(audio_paths)
-    print(transcriptions)
+    # transcriptions = model.transcribe(audio_paths)
+    # print(transcriptions)
 
     """Create Processor"""
 
@@ -113,16 +119,15 @@ def main():
 
     references = prep_asr_testing(timit)
 
-    references
 
     evaluation = model.evaluate(references)
 
     print("WER AND CER LOCATION")
     print(evaluation)
 
-    test2 = ['content/downloads/Torgo/M04/Session2/wav_headMic/0297.wav','content/downloads/Torgo/M04/Session2/wav_headMic/0298.wav']
+    test2 = ['content/downloads/Torgo/M04/Session2/wav_headMic/0298.wav']
 
-    model.transcribe(test2)
+    print(model.transcribe(test2)[0]["transcription"])
 
     test3 = [{'path': 'content/downloads/Torgo/M04/Session2/wav_headMic/0297.wav',
         'transcription': 'BIT'},
